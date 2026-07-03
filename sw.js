@@ -1,5 +1,8 @@
-const CACHE_NAME = 'pix-book-launcher-v2-1-2-stable';
-const ASSETS = ['./', './index.html', './manifest.json', './icons/icon-192.png', './icons/icon-512.png'];
-self.addEventListener('install', event => { event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS)).then(() => self.skipWaiting())); });
-self.addEventListener('activate', event => { event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
-self.addEventListener('fetch', event => { event.respondWith(fetch(event.request).catch(() => caches.match(event.request).then(r => r || caches.match('./index.html')))); });
+const CACHE='pix-book-launcher-v2-stabile-2026-07-03';
+self.addEventListener('install', event => { self.skipWaiting(); });
+self.addEventListener('activate', event => { event.waitUntil((async()=>{ const keys=await caches.keys(); await Promise.all(keys.filter(k=>k.startsWith('pix-book-launcher-') && k!==CACHE).map(k=>caches.delete(k))); await self.clients.claim(); })()); });
+self.addEventListener('fetch', event => {
+ const req=event.request;
+ if(req.mode==='navigate' || (req.headers.get('accept')||'').includes('text/html')){ event.respondWith(fetch(req,{cache:'no-store'}).catch(()=>caches.match('./index.html'))); return; }
+ event.respondWith(caches.open(CACHE).then(cache=>fetch(req).then(res=>{cache.put(req,res.clone());return res;}).catch(()=>cache.match(req))));
+});
